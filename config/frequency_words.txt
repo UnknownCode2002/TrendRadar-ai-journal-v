@@ -28,231 +28,371 @@
 #   /赌博|博彩/       用 /.../ 包裹可以匹配多个词（用 | 分隔）
 
 [GLOBAL_FILTER]
-# 过滤标题党
 震惊
-
+官宣
+售价.*起
+首发.*预售
 
 
 # ───────────────────────────────────────────────────────────────
 #                        词组定义区
 # ───────────────────────────────────────────────────────────────
-# 在这里写入你想关注的关键词。
-# 每个词组用空行分隔，同一词组内的关键词是"或"的关系。
-#
-# ┌─────────────────────────────────────────────────────────────┐
-# │                      语法总览（快速参考）                      │
-# └─────────────────────────────────────────────────────────────┘
-#
-# 关键词语法：
-#   关键词            普通关键词，标题包含即匹配
-#   /正则/            正则表达式匹配（自动忽略大小写）
-#   关键词 => 别名    给关键词指定显示别名
-#   [组别名]          词组第一行，给整组指定别名
-#   +关键词           必须词，所有必须词都要匹配才算匹配
-#   !关键词           过滤词，匹配则排除该条新闻（仅限当前词组）
-#   @数字             限制该词组最多显示多少条
-#
-# 显示名称优先级：
-#   1. 有组别名 → 显示组别名
-#   2. 没有组别名 → 显示各行别名拼接（用 " / " 连接）
-#   3. 没有别名 → 显示关键词本身
-#
-#
-# ┌─────────────────────────────────────────────────────────────┐
-# │                      基础用法（推荐新手）                      │
-# └─────────────────────────────────────────────────────────────┘
-#
-# 1. 最简单：直接写关键词
-#    ────────────────────
-#    华为
-#
-#    效果：匹配所有包含"华为"的新闻
-#
-#
-# 2. 多个关键词归为一组
-#    ────────────────────
-#    华为
-#    鸿蒙
-#    任正非
-#
-#    效果：匹配包含"华为"或"鸿蒙"或"任正非"的新闻，统一显示为"华为 / 鸿蒙 / 任正非"
-#
-#
-# 3. 给词组起个名字（推荐）
-#    ────────────────────
-#    [华为]
-#    华为
-#    鸿蒙
-#    任正非
-#
-#    效果：同上，但显示名称为"华为"（更简洁）
-#
-#
-# ┌─────────────────────────────────────────────────────────────┐
-# │                      进阶用法（可选）                         │
-# └─────────────────────────────────────────────────────────────┘
-#
-# 4. 用正则表达式匹配多个词（一行搞定）
-#    ────────────────────
-#    /华为|鸿蒙|任正非/ => 华为
-#
-#    效果：匹配包含"华为"或"鸿蒙"或"任正非"的新闻，显示为"华为"
-#    说明：/.../ 里用 | 分隔多个词，=> 后面是显示名称
-#
-#    💡 不懂正则？问 AI：
-#       "帮我写一个正则表达式，匹配包含'华为'或'鸿蒙'或'任正非'的文本，
-#        格式要求：/正则/ => 显示名称"
-#
-#
-# 5. 精确匹配英文单词（避免误匹配）
-#    ────────────────────
-#    /\bAI\b/i => AI
-#
-#    说明：\b 表示单词边界，避免匹配到 "MAIL" 中的 "AI"
-#          /i 表示忽略大小写，"ai"、"AI"、"Ai" 都能匹配
-#
-#    💡 不懂正则？问 AI：
-#       "帮我写一个正则表达式，精确匹配英文单词'AI'（不匹配 MAIL 中的 AI），
-#        忽略大小写，格式要求：/正则/i => 显示名称"
-#
-#
-# 6. 排除特定内容
-#    ────────────────────
-#    [苹果公司]
-#    苹果
-#    !水果
-#    !果园
-#
-#    效果：匹配"苹果"但排除包含"水果"或"果园"的新闻
-#    说明：! 开头的词表示"排除"
-#
-#
-# 7. 限制显示条数
-#    ────────────────────
-#    [科技新闻]
-#    科技
-#    @5
-#
-#    效果：最多显示 5 条匹配的新闻
-#    说明：@数字 表示限制条数
-#
-#
-# 8. 必须同时包含多个词
-#    ────────────────────
-#    +苹果
-#    +发布会
-#
-#    效果：必须同时包含"苹果"和"发布会"才匹配
-#    说明：+ 开头的词表示"必须包含"
-#
-# ───────────────────────────────────────────────────────────────
 
 [WORD_GROUPS]
 
 # ═══════════════════════════════════════════════════════════════
-#                         企业与品牌
+#                        AI 核心公司 & 模型
 # ═══════════════════════════════════════════════════════════════
-
-/胖东来|于东来/ => 胖东来
 
 /深度求索|幻方量化|梁文锋|\bDeepSeek\b/ => DeepSeek
+/DeepSeek.*V4|DeepSeek.*R2|DeepSeek.*Prover/ => DeepSeek 新模型
 
-/华为|任正非|余承东|鸿蒙|海思|昇腾|鲲鹏|\bHUAWEI\b|\bHarmonyOS\b|\bHiSilicon\b/ => 华为
+/\bOpenAI\b|\bChatGPT\b|\bSora\b|\bDALL-E\b|\bSam Altman\b|\bGPT-5\b|\bGPT-4o\b|\bo3\b|\bGPT-5\.\d\b|\bGPT API\b|\bOpenAI API\b/ => OpenAI
 
-/比亚迪|王传福|方程豹|腾势|仰望|弗迪|刀片电池|云辇|\bBYD\b|\bDenza\b|\bYangwang\b/ => 比亚迪
-
-/大疆|汪滔|灵眸|如影|\bDJI\b|\bRoboMaster\b|\bMavic\b|\bZenmuse\b/ => 大疆
-
-/宇树|王兴兴|\bUnitree\b/ => 宇树机器人
-
-/智元|灵犀|稚晖君|彭志辉|AgiBot/ => 智元机器人
-/众擎|EngineAI|赵同阳/ => 众擎机器人
-
-/黑神话|冯骥/ => 黑神话悟空
-
-/影之刃零|梁其伟/ => 影之刃零
-
-/三体|流浪地球|刘慈欣|郭帆/ => 三体/流浪地球
-
-申奥
-
-/京东|刘强东|\bJD\b|\bJingdong\b/ => 京东
-
-/字节|张一鸣|梁汝波|抖音|\bByteDance\b|\bTikTok\b|\bDouyin\b|\bLark\b|\bCapCut\b/ => 字节跳动
-
-/腾讯|鹅厂|马化腾|微信|QQ|天美|阅文集团|微众银行|\bTencent\b|\bPony Ma\b|\bWeChat\b|\bLightSpeed\b|\bWeBank\b/ => 腾讯
-
-/qwen|minimax|glm/ => 国产开源模型
-
-/特斯拉|马斯克|\bTesla\b|\bElon Musk\b|\bCybertruck\b|\bModel 3\b|\bModel Y\b|\bModel S\b|\bModel X\b|\bFSD\b/ => 特斯拉
-
-/英伟达|黄仁勋|\bNVIDIA\b|\bGeForce\b|\bRTX\b|\bCUDA\b|\bJensen Huang\b/ => 英伟达
-/苏姿丰|锐龙|霄龙|\bAMD\b|\bRyzen\b|\bEPYC\b|\bRadeon\b|\bLisa Su\b/ => AMD
-
-/微软|\bMicrosoft\b|\bWindows\b|\bAzure\b|\bSatya Nadella\b|\bCopilot\b/ => 微软
-/谷歌|皮查伊|安卓|油管|\bGoogle\b|\bAlphabet\b|\bAndroid\b|\bChrome\b|\bYouTube\b|\bGemini\b|\bDeepMind\b|\bWaymo\b/ => 谷歌
-/库克|\biPhone\b|\biPad\b|\bMacBook\b|\biOS\b|\bVision Pro\b|\bAirPods\b|\bApple\b|\bTim Cook\b/ => 苹果
-
-/\bOpenAI\b|\bChatGPT\b|\bSora\b|\bDALL-E\b|\bSam Altman\b|\bGreg Brockman\b/ => OpenAI
 /\bAnthropic\b|\bClaude\b|\bDario Amodei\b/ => Claude
 
+/\bGemini\b|\bDeepMind\b|\bGoogle.*AI\b/ => Gemini/DeepMind
 
-# ═══════════════════════════════════════════════════════════════
-#                         国家与地区
-# ═══════════════════════════════════════════════════════════════
+/英伟达|黄仁勋|\bNVIDIA\b|\bCUDA\b|\bH100\b|\bH200\b|\bB100\b|\bB200\b|\bBlackwell\b|\bDGX\b/ => 英伟达 AI
 
-[中国]
-国产
-中国
+/qwen|minimax|glm|百川|智谱|月之暗面|\bKimi\b|豆包/ => 国产大模型
 
-[东亚]
-日本
-朝鲜
-韩国
+/\bMeta\b.*\b(Llama|AI)\b|\bFacebook\b.*\bAI\b|\bFAIR\b/ => Meta AI
 
-[北美]
-美国
-加拿大
-
-[西欧]
-法国
-英国
-
-/俄罗斯|俄国/ => 俄罗斯
-
-印度
+/\bMicrosoft\b.*\b(Copilot|Azure.*AI)\b|\bMSFT\b/ => Microsoft AI
 
 
 # ═══════════════════════════════════════════════════════════════
-#                         科技领域
+#                        AI 技术领域
 # ═══════════════════════════════════════════════════════════════
 
-[AI 相关]
-/(?<![a-zA-Z])ai(?![a-zA-Z])/
-人工智能
+[AI 大模型]
+大模型
+大语言模型
+基础模型
+预训练
+微调
+多模态
+文生图
+文生视频
+图生视频
+SFT
+RLHF
+提示词
+Prompt
+/\bbase model\b|\bfoundation model\b|\bfoundation\b.*\bmode\b/i
+/\b(next-token|next token)\b.*\bprediction\b|\bprediction\b.*\b(next)\b/i
+/\btoken\b.*\b(context|window)\b|\bcontext\b.*\bwindow\b/i
+/\b(reasoning|think|thought)\b.*\b(model|chain|step)\b/i
+/\b(pretrain|pre-train)\b.*\b(model|data|corpus)\b/i
+/\bLLM\b|\blanguage model\b|\blarge language\b|\bfoundation\b.*\bmodel\b/i
+/\bfine.tune\b|\binstruction.tune\b|\balignment\b.*\btune\b/i
+/\bknowledge\b.*\b(graph|base|work|retriev|distill|embed)\b/i
+/\b(machine learning|deep learning|neural network|supervised|unsupervised|reinforcement)\b/i
+/\b(in-context|chain.of.thought|few.shot|zero.shot|prompt.*engineer)\b/i
+/\b(generative|generation|synthesis|synthetic)\b.*\b(model|data|content)\b/i
+/\b(reasoning|inference|understand|comprehension)\b.*\b(model|task|capability)\b/i
 
-[芯片]
-芯片
-光刻机
-半导体
+[AI Agent]
+/(?<![a-zA-Z])agent(?![a-zA-Z])/ => Agent
+智能体
+自主智能
+多智能体
+工具调用
+Function Call
+/\b(CrewAI|AutoGPT|LangGraph|Swarm|AGiXT)\b/i
+/\b(agentic|multi-agent|agent.*framework|orchestrat)\b/i
+/\b(reAct|function.call.*agent|tool.*use|tool.*call)\b/i
+/\bagent\b.*\b(workflow|loop|plan|pipeline)\b/i
 
-/水电|雅鲁藏布江/ => 水电
-/光伏|太阳能/ => 光伏
-核能
-能源
+[MCP 协议]
+MCP
+Model Context Protocol
+模型上下文协议
 
-/自动驾驶|无人驾驶|智驾/ => 自动驾驶
+[RAG / 检索增强]
+RAG
+检索增强
+向量数据库
+向量检索
+知识库
+语义搜索
+Embedding
 
-机器人
-/机械狗|四足/ => 机器狗
+[AI 训练/推理]
+训练.*模型
+推理.*优化
+模型蒸馏
+模型压缩
+量化
+MoE
+混合专家
+Transformer
+注意力机制
+/\btrain\b.*\b(model|pipeline|data|batch|loop|epoch|loss)\b/i
+/\binference\b.*\b(optimiz|acceler|engine|latency|throughput)\b/i
+/\b(model|neural|network)\b.*\b(architect|design|optimiz|compress|prun|quantiz)\b/i
+/\b(optimiz|convergen|gradient|backprop|loss.*function|regulariz)\b/i
+/\b(attention|self.attention|cross.attention|multi.head)\b/i
+/\b(embedding|representation|feature.*extract|latent)\b/i
+
+[AI 部署/框架]
+\bHuggingFace\b
+\bHugging Face\b
+\bPyTorch\b
+\bTensorFlow\b
+\bLangChain\b
+\bLlamaIndex\b
+\bvLLM\b
+\bOllama\b
+\bOpenWebUI\b
+\bllama\.cpp\b
+/\b(framework|platform|infrastructure|pipeline)\b.*\b(AI|ML|model|data|agent)\b/i
+/\b(serverless|edge|cloud|distributed)\b.*\b(AI|ML|inference|train)\b/i
+/\b(container|docker|kubernetes|deploy)\b.*\b(model|AI|LLM)\b/i
+/\b(inference.*engine|model.*server|model.*runtime|serving.*platform)\b/i
+/\b(API|SDK|library|package)\b.*\b(AI|ML|model|GPT|LLM)\b/i
+/\b(gpu|cuda|tpu|rocm|oneapi)\b.*\b(acceler|comput|train|inference)\b/i
+/\b(dataset|data.*pipeline|data.*loader|data.*augment|data.*prep)\b/i
+
+
+# ═══════════════════════════════════════════════════════════════
+#                        海外 AI 动态
+# ═══════════════════════════════════════════════════════════════
+
+[海外 AI 动态]
+/\b(release|launch|announce|introduc|publish)\b.*\b(model|version|update|tool|paper|research|project)\b/i
+/\b(new|next-gen|state.of.the.art|SOTA|breakthrough|cutting.edge)\b.*\b(AI|model|method|approach|tool)\b/i
+/\bAI\b.*\b(startup|funding|invest|acquire|partner|collaborat|innovate)\b/i
+/\b(open source|open-source|opensource)\b.*\b(release|project|tool|framework|library|repo|community)\b/i
+/\b(Hugging Face|huggingface)\b.*\b(model|dataset|space|blog|transformers)\b/i
+/\b(inference|serving|train)\b.*\b(model|LLM|deploy|platform|endpoint)\b/i
+/\b(benchmark|evaluat|compare|score|leaderboard)\b.*\b(model|LLM|performance|accuracy)\b/i
+/\b(API|platform|service)\b.*\b(launch|update|pric|limit|feature)\b.*\b(AI)?/i
+/\b(build|create|develop|design)\b.*\b(AI|agent|model|tool|app)\b/i
+/\b(chat|conversation|dialogue|assistant|companion)\b.*\b(AI|GPT|LLM|bot)\b/i
+/\b(automat|autonomous|self.*driven|auto.*pilot)\b.*\b(AI|agent|system)\b/i
+/\b(plugin|extension|integration|embed)\b.*\b(AI|GPT|LLM|model|agent)\b/i
+/\b(visual|vision|image|video|audio|speech|voice)\b.*\b(AI|model|generat|recogni|synthes)\b/i
+/\b(security|privacy|safety|alignment|govern)\b.*\b(AI|model|system|data)\b/i
+/\b(workflow|pipeline|automation|orchestrat)\b.*\b(AI|agent|model|process)\b/i
+/\b(interactive|real.time|stream|live)\b.*\b(AI|chat|voice|video|agent)\b/i
+/\b(search|retriev|query|index|rank)\b.*\b(AI|vector|semantic|embed|neural)\b/i
+/\b(learn|tutorial|guide|cookbook|example|demo|sample)\b.*\b(AI|GPT|LLM|model)\b/i
+
+
+# ═══════════════════════════════════════════════════════════════
+#                        GitHub / 开源
+# ═══════════════════════════════════════════════════════════════
+
+[GitHub 热门]
+/GitHub.*Star|Star.*破|Star.*万/
+/GitHub.*开源|开源.*GitHub/
+/GitHub.*趋势|趋势.*GitHub/
+/GitHub.*热榜|热榜.*GitHub/
+/GitHub.*第一|GitHub.*登顶/
+
+[开源项目]
+开源项目
+开源模型
+开源框架
+开源工具
+开源社区
+开源协议
+/\bApache\b.*开源|\bMIT\b.*开源/
+开源中国
+/\bGitee\b/
+
+[开源大模型]
+开源大模型
+开源.*LLM
+开源.*大模型
+/\bLlama\b/
+/\bMistral\b/
+/\bQwen.*开源|开源.*Qwen\b/
+/\bGLM.*开源|开源.*GLM\b/
+/DeepSeek.*开源|开源.*DeepSeek/
+
+[AI 开源工具]
+/AI.*开源工具|开源.*AI.*工具/
+/AI.*编程|编程.*AI/
+/\bCursor\b|\bWindsurf\b/
+/\bCopilot\b/
+/\bAider\b|\bCline\b|\bContinue\b|\bRoo Code\b/
+/代码.*生成|生成.*代码/
+/AI.*IDE|AI.*编辑器/
+/\bClaude Code\b|\bCodex CLI\b/
+/AI.*framework|framework.*AI/i
+/\b(Cline|Aider|Windsurf|Codeium|Tabby|Supermaven)\b/i
+/\b(CodeGPT|Bolt\.new|v0\b|Lovable|Replit.*AI)\b/i
+/\bAI.*(code|coding|dev|developer|program)\b/i
+/\b(prompt.*engineer|prompt.*optimize|prompt.*template)\b/i
+
+[开源协议/动态]
+开源许可证
+开源协议.*变更
+开源.*争议
+开源.*商业化
+开源.*企业版
+
+[GitHub 新项目]
+/开源.*发布|发布.*开源/
+/首个.*开源|开源.*首个/
+/开源.*获.*Star|Star.*开源/
+/新.*开源.*项目/
+/\bOpen source\b.*\brelease\b/i
+/\breleased\b.*\bmodel\b|\bmodel\b.*\breleased\b/i
+/\bGitHub\b.*\btrending\b.*\btoday\b/i
+/.*\bhit\b.*\bGitHub\b.*\bstar\b/i
+/.*\bShow HN\b.*|\bAsk HN\b.*|\bRate My\b.*/i
+/.*\bfor (VS Code|Chrome|Figma|Slack|Discord|VSCode)\b.*/i
+/\bv?\d+\.\d+\b.*\brelease\b|\brelease\b.*\bv?\d+\.\d+\b/i
+/\b(Show HN|Tell HN|Ask HN|Launch HN)\b/i
+/\bstars?\b.*\b(GitHub|repo)\b|\btrending\b.*\btoday\b/i
+/\b(GitHub|repo|repository)\b.*\b(AI|LLM|agent|model|tool|framework)\b/i
+
+
+# ═══════════════════════════════════════════════════════════════
+#                        机器人 & 具身智能
+# ═══════════════════════════════════════════════════════════════
+
+[具身智能]
 具身智能
+人形机器人
 
-/月球|登月|火星|宇宙|飞船|航天|空间站|卫星/ => 航天
+[AI 机器人公司]
+/宇树|王兴兴|\bUnitree\b/ => 宇树机器人
+/智元|灵犀|稚晖君|彭志辉|\bAgiBot\b/ => 智元机器人
+/众擎|\bEngineAI\b|赵同阳/ => 众擎机器人
+/Figure.*AI|\bFigure\b.*机器人/ => Figure AI
 
-# 前沿科技
-量子
-脑机
-基因
 
-# 产业政策
-生产力
+# ═══════════════════════════════════════════════════════════════
+#                        研究方法 / 学术
+# ═══════════════════════════════════════════════════════════════
+
+[强化学习]
+强化学习
+RL
+GRPO
+PPO
+奖励模型
+偏好对齐
+
+[AI 安全]
+AI.*安全
+对齐
+越狱
+红队
+幻觉
+可控.*生成
+
+[AI 基准测试]
+基准测试
+Benchmark
+评测.*模型
+模型.*评测
+跑分
+排行榜
+
+[多模态 AI]
+多模态
+视觉.*语言
+VLM
+视觉理解
+语音.*模型
+TTS
+语音合成
+图像.*理解
+
+
+# ═══════════════════════════════════════════════════════════════
+#                        AI 论文 / 研究
+# ═══════════════════════════════════════════════════════════════
+
+[AI 论文/研究]
+/\b(paper|research|study|survey|arXiv)\b/i
+/\b(arxiv|preprint|manuscript)\b\.\d/i
+/\b(ICML|NeurIPS|ICLR|CVPR|ACL|EMNLP|AAAI|ICCV)\b/i
+/\b(state-of-the-art|SOTA|SotA|outperform|state of the art)\b/i
+/\b(empiric|experiment|propos|novel)\b.*\b(approach|method|framework|architect)\b/i
+/\b(attention|transformer|Mamba|state.space|diffusion)\b.*\b(model|mechanism)\b/i
+
+[AI 视频/图像生成]
+/\b(Sora|Runway|Pika|Synthesia|HeyGen)\b/i
+/\b(Stable Diffusion|Midjourney|DALL-E|Flux|Imagen)\b/i
+/\b(video.*generat|image.*generat|text.*to.*video|text.*to.*image|text.*to.*3D)\b/i
+/\b(AI.*video|AI.*image)\b.*\b(creat|generat|edit|make)\b/i
+/\b(diffusion|GAN|VAE|VQGAN|NeRF|3D.*Gaussian)\b.*\b(model|generat)\b/i
+/\b(ComfyUI|Automatic1111|Fooocus|Stable.*Diffusion.*WebUI)\b/i
+
+[AI 应用/插件]
+/for\s+(VS Code|Chrome|Figma|Slack|Discord|VSCode)\s/i
+/\b(plugin|extension|addon|integration|embed)\b.*\b(AI|GPT|LLM)\b/i
+/\b(AI|GPT|LLM)\b.*\b(plugin|extension|addon|integration|embed)\b/i
+/\b(Chrome.*extension|VS.*Code.*extension)\b.*\b(AI|chat|copilot)\b/i
+
+[向量/嵌入技术]
+/\b(ChromaDB|Pinecone|Weaviate|Milvus|Qdrant|pgvector)\b/i
+/\b(vector.*database|vector.*search|vector.*store|embedding.*model)\b/i
+/\b(embedding|semantic.*search|semantic.*kernel)\b/i
+/\b(vector|embed)\b.*\b(index|retriev|search|database|store)\b/i
+
+[AI 基础设施]
+/\b(inference|model.*serving|model.*host)\b.*\b(endpoint|API|platform)\b/i
+/\b(vLLM|TGI|Triton|TensorRT|ONNX|OpenVINO)\b/i
+/\b(GPU.*cloud|AI.*cloud|serverless.*inference|edge.*AI)\b/i
+/\b(model.*format|GGUF|GGML|ONNX|SafeTensor|quantiz)\b/i
+/\b(MLOps|MLOps|AIOps|LLMOps|model.*monitor|model.*observ)\b/i
+
+
+# ═══════════════════════════════════════════════════════════════
+#                        2026年5月 追踪话题
+# ═══════════════════════════════════════════════════════════════
+
+[xAI / Grok]
+xAI
+马斯克.*Grok
+Grok.*Build
+Grok.*5
+Grok.*发布
+/\bxAI\b/
+
+[GPT-5.6 / GPT-5]
+GPT-5.6
+GPT-5
+GPT-5o
+GPT.*新模型
+GPT.*发布
+
+[AI Coding / Vibe Coding]
+AI.*Coding
+Vibe.*Coding
+AI.*编程
+智能编码
+AI.*IDE
+AI.*开发工具
+
+[具身智能 / 机器人]
+具身智能
+具身.*大模型
+机器人.*基础模型
+机器人.*大模型
+Embodied.*AI
+李想.*智能
+
+[宇树科技]
+宇树科技
+宇树.*IPO
+宇树.*上市
+Unitree.*IPO
+
+[MATRIX-3 / 矩阵超智]
+MATRIX-3
+矩阵超智
+
+[AI 行业大会]
+人工智能.*大会
+AI.*峰会
+全球.*AI.*大会
+杭州.*AI

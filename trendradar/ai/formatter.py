@@ -363,6 +363,14 @@ def render_ai_analysis_html_rich(result: AIAnalysisResult) -> str:
                         <div class="ai-block-content">{summaries_html}</div>
                     </div>"""
 
+    if result.daily_summary:
+        ds_html = _escape_html(result.daily_summary)
+        ai_html += f"""
+                    <div class="ai-block" style="border-left-color:#b8860b;background:rgba(247,242,220,0.5);">
+                        <div class="ai-block-title">📰 今日一言</div>
+                        <div class="ai-block-content" style="font-size:15px;font-weight:600;text-align:center;">{ds_html}</div>
+                    </div>"""
+
     ai_html += """
                     </div>
                 </div>"""

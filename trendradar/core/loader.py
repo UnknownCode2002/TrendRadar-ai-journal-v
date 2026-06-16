@@ -73,7 +73,6 @@ def _load_crawler_config(config_data: Dict) -> Dict:
         "USE_PROXY": crawler_config.get("use_proxy", False),
         "DEFAULT_PROXY": crawler_config.get("default_proxy", ""),
         "ENABLE_CRAWLER": platforms_config.get("enabled", True),
-        "PLATFORMS_API_URL": _get_env_str("PLATFORMS_API_URL") or platforms_config.get("api_url", ""),
     }
 
 
@@ -232,7 +231,7 @@ def _load_display_config(config_data: Dict) -> Dict:
     region_order = display.get("region_order", default_region_order)
 
     # 验证 region_order 中的值是否合法
-    valid_regions = {"hotlist", "rss", "new_items", "standalone", "ai_analysis"}
+    valid_regions = {"hotlist", "rss", "new_items", "standalone", "ai_analysis", "github_trending"}
     region_order = [r for r in region_order if r in valid_regions]
 
     # 如果过滤后为空，使用默认顺序

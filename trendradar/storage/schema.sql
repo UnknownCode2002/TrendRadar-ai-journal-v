@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS news_items (
     first_crawl_time TEXT NOT NULL,      -- 首次抓取时间
     last_crawl_time TEXT NOT NULL,       -- 最后抓取时间
     crawl_count INTEGER DEFAULT 1,       -- 抓取次数
+    extra_info TEXT DEFAULT '',          -- 扩展信息：star/points/votes（如 "✰ 36,894"）
+    extra_hover TEXT DEFAULT '',         -- 扩展信息：项目描述/标语文本
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (platform_id) REFERENCES platforms(id)

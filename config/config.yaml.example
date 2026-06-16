@@ -1,0 +1,284 @@
+# ═══════════════════════════════════════════════════════════════
+#                    TrendRadar 配置文件
+#                      Version: 2.2.0
+# ═══════════════════════════════════════════════════════════════
+#
+# 📌 使用说明：
+#   1. 复制此文件为 config.yaml
+#   2. 填入你的真实配置（API Key、邮箱密码等）
+#   3. config.yaml 已被 .gitignore 排除，不会提交到仓库
+
+
+# 可视化配置编辑器地址: https://sansan0.github.io/TrendRadar/
+
+
+# ===============================================================
+# 1. 基础设置
+# ===============================================================
+app:
+  timezone: "Asia/Shanghai"
+  show_version_update: true
+
+
+# ===============================================================
+# 1.5 调度系统
+# ===============================================================
+schedule:
+  enabled: true
+  preset: "custom"
+
+
+# ===============================================================
+# 2. 数据源 - 热榜平台
+# ===============================================================
+platforms:
+  enabled: true
+  sources:
+    - id: "toutiao"
+      name: "今日头条"
+    - id: "baidu"
+      name: "百度热搜"
+    - id: "wallstreetcn-hot"
+      name: "华尔街见闻"
+    - id: "thepaper"
+      name: "澎湃新闻"
+    - id: "bilibili-hot-search"
+      name: "bilibili 热搜"
+    - id: "cls-hot"
+      name: "财联社热门"
+    - id: "ifeng"
+      name: "凤凰网"
+    - id: "tieba"
+      name: "贴吧"
+    # - id: "weibo"
+    #   name: "微博" (已关闭：娱乐热搜混入太多 AI 无关内容)
+    - id: "douyin"
+      name: "抖音"
+    - id: "zhihu"
+      name: "知乎"
+    - id: "github"
+      name: "GitHub Trending"
+    - id: "hackernews"
+      name: "Hacker News"
+    - id: "juejin"
+      name: "掘金"
+    - id: "36kr"
+      name: "36氪"
+    - id: "ithome"
+      name: "IT之家"
+    - id: "v2ex"
+      name: "V2EX"
+    - id: "sspai"
+      name: "少数派"
+    - id: "producthunt"
+      name: "Product Hunt"
+    - id: "xueqiu"
+      name: "雪球"
+
+
+# ===============================================================
+# 3. 数据源 - RSS 订阅
+# ===============================================================
+rss:
+  enabled: true
+  freshness_filter:
+    enabled: true
+    max_age_days: 1
+  feeds:
+    - id: "hacker-news"
+      name: "Hacker News"
+      url: "https://hnrss.org/frontpage"
+    - id: "ruanyifeng"
+      name: "阮一峰的网络日志"
+      url: "http://www.ruanyifeng.com/blog/atom.xml"
+      enabled: false
+    - id: "techcrunch-ai"
+      name: "TechCrunch AI"
+      url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+
+
+# ===============================================================
+# 4. 报告模式
+# ===============================================================
+report:
+  mode: "current"
+  display_mode: "keyword"
+  sort_by_position_first: false
+  rank_threshold: 5
+  max_news_per_keyword: 0
+
+
+# ===============================================================
+# 4.5 筛选策略
+# ===============================================================
+filter:
+  method: "ai"
+  priority_sort_enabled: true
+
+
+# ===============================================================
+# 4.6 AI 智能筛选配置
+# ===============================================================
+ai_filter:
+  batch_size: 200
+  batch_interval: 2
+  min_score: 0.7
+  reclassify_threshold: 0.6
+  prompt_file: "prompt.txt"
+  extract_prompt_file: "extract_prompt.txt"
+  update_tags_prompt_file: "update_tags_prompt.txt"
+
+
+# ===============================================================
+# 5. 推送内容控制
+# ===============================================================
+display:
+  region_order:
+    - new_items
+    - hotlist
+    - github_trending
+    - rss
+    - standalone
+    - ai_analysis
+  regions:
+    hotlist: true
+    new_items: false
+    rss: true
+    standalone: false
+    ai_analysis: true
+  standalone:
+    platforms: ["zhihu", "wallstreetcn-hot"]
+    rss_feeds: []
+    max_items: 20
+
+
+# ===============================================================
+# 6. 推送通知（请填入真实配置）
+# ===============================================================
+notification:
+  enabled: true
+  channels:
+    feishu:
+      webhook_url: ""                        # 飞书 Webhook URL
+    dingtalk:
+      webhook_url: ""                        # 钉钉 Webhook URL
+    wework:
+      webhook_url: ""                        # 企业微信 Webhook URL
+      msg_type: "markdown"
+    telegram:
+      bot_token: ""                          # Telegram Bot Token
+      chat_id: ""                            # Telegram Chat ID
+    email:
+      from: "your_email@example.com"         # 发件人邮箱
+      password: ""                           # 邮箱密码/授权码
+      to: "recipient@example.com"            # 收件人邮箱（多个用逗号分隔）
+      smtp_server: ""                        # SMTP 服务器（可选，自动识别）
+      smtp_port: ""                          # SMTP 端口（可选，自动识别）
+    ntfy:
+      server_url: "https://ntfy.sh"
+      topic: ""                              # ntfy 主题
+      token: ""                              # ntfy 访问令牌（可选）
+    bark:
+      url: ""                                # Bark URL
+    slack:
+      webhook_url: ""                        # Slack Webhook URL
+    generic_webhook:
+      webhook_url: ""
+      payload_template: ""
+
+
+# ===============================================================
+# 7. 存储配置
+# ===============================================================
+storage:
+  backend: "auto"
+  formats:
+    sqlite: true
+    txt: false
+    html: true
+  local:
+    data_dir: "output"
+    retention_days: 30
+  remote:
+    retention_days: 0
+    endpoint_url: ""
+    bucket_name: ""
+    access_key_id: ""
+    secret_access_key: ""
+    region: ""
+  pull:
+    enabled: false
+    days: 7
+
+
+# ===============================================================
+# 8. AI 模型配置（请填入真实 API Key）
+# ===============================================================
+ai:
+  model: "openai/deepseek-ai/DeepSeek-V4-Flash"
+  api_key: ""                              # API Key
+  api_base: "https://api.siliconflow.cn/v1"
+  timeout: 300
+  temperature: 0.3
+  max_tokens: 5000
+  num_retries: 3
+  fallback_models: []
+
+
+# ===============================================================
+# 9. AI 分析功能
+# ===============================================================
+ai_analysis:
+  enabled: true
+  language: "Chinese"
+  prompt_file: "ai_analysis_prompt.txt"
+  mode: "follow_report"
+  max_news_for_analysis: 150
+  include_rss: false
+  include_standalone: true
+  include_rank_timeline: true
+
+
+# ===============================================================
+# 10. AI 翻译功能
+# ===============================================================
+ai_translation:
+  enabled: true
+  language: "中文"
+  prompt_file: "ai_translation_prompt.txt"
+  scope:
+    hotlist: false
+    rss: true
+    standalone: true
+
+
+# ===============================================================
+# 11. 高级设置
+# ===============================================================
+advanced:
+  debug: false
+  version_check_url: "https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version"
+  mcp_version_check_url: "https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version_mcp"
+  configs_version_check_url: "https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version_configs"
+  crawler:
+    request_interval: 2000
+    use_proxy: false
+    default_proxy: "http://127.0.0.1:10801"
+  rss:
+    request_interval: 1000
+    timeout: 15
+    use_proxy: false
+    proxy_url: ""
+  weight:
+    rank: 0.6
+    frequency: 0.3
+    hotness: 0.1
+  max_accounts_per_channel: 3
+  batch_size:
+    default: 4000
+    dingtalk: 20000
+    feishu: 30000
+    bark: 4000
+    slack: 4000
+  batch_send_interval: 3
+  feishu_message_separator: "━━━━━━━━━━━━━━━━"

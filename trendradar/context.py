@@ -30,7 +30,7 @@ from trendradar.core import (
 from trendradar.report import (
     prepare_report_data,
     generate_html_report,
-    render_html_content,
+    render_html_content_newspaper,
 )
 from trendradar.notification import (
     render_feishu_content,
@@ -321,7 +321,8 @@ class AppContext:
         report_metadata: Optional[Dict] = None,
         translate_report_func: Optional[Any] = None,
     ) -> str:
-        """生成HTML报告"""
+        """生成HTML报告（报刊风格）"""
+        render_func = lambda *args, **kwargs: self.render_html(*args, rss_items=rss_items, rss_new_items=rss_new_items, ai_analysis=ai_analysis, standalone_data=standalone_data, **kwargs)
         return generate_html_report(
             stats=stats,
             total_titles=total_titles,
@@ -334,7 +335,7 @@ class AppContext:
             output_dir="output",
             date_folder=self.format_date(),
             time_filename=self.format_time(),
-            render_html_func=lambda *args, **kwargs: self.render_html(*args, rss_items=rss_items, rss_new_items=rss_new_items, ai_analysis=ai_analysis, standalone_data=standalone_data, **kwargs),
+render_html_func=lambda *args, **kwargs: self.render_html(*args, rss_items=rss_items, rss_new_items=rss_new_items, ai_analysis=ai_analysis, standalone_data=standalone_data, **kwargs),
             report_metadata=report_metadata,
             translate_report_func=translate_report_func,
         )
@@ -350,8 +351,8 @@ class AppContext:
         ai_analysis: Optional[Any] = None,
         standalone_data: Optional[Dict] = None,
     ) -> str:
-        """渲染HTML内容"""
-        return render_html_content(
+        """渲染HTML内容（报刊风格）"""
+        return render_html_content_newspaper(
             report_data=report_data,
             total_titles=total_titles,
             mode=mode,

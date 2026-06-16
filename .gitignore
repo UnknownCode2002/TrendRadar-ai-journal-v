@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.codebuddy/
+
+# Output files
+output/
+/index.html
+
+# Environment
+.env
+
+# Sensitive config (contains passwords, API keys, tokens)
+config/config.yaml
+config/config.yaml.bak
+
+# Debug logs
+_gh_debug*.log
+_github_debug*.log
+
+# Temporary utility scripts
+_send_mail.py
+_clear_schedule.py

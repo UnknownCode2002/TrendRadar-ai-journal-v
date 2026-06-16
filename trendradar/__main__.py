@@ -48,11 +48,11 @@ def _compare_version(local: str, remote: str) -> str:
     remote_tuple = _parse_version(remote)
 
     if local_tuple < remote_tuple:
-        return "⚠️ 需要更新"
+        return "[需要更新]"
     elif local_tuple > remote_tuple:
-        return "🔮 超前版本"
+        return "[超前版本]"
     else:
-        return "✅ 已是最新"
+        return "[已是最新]"
 
 
 def _fetch_remote_version(version_url: str, proxy_url: Optional[str] = None) -> Optional[str]:
@@ -222,16 +222,14 @@ class NewsAnalyzer:
         self.update_info = None
         self.proxy_url = None
         self._setup_proxy()
-        self.data_fetcher = DataFetcher(
-            self.proxy_url,
-            api_url=self.ctx.config.get("PLATFORMS_API_URL") or None,
-        )
+        self.data_fetcher = DataFetcher(self.proxy_url)
 
         # RSS/平台元数据（用于报告头部展示）
         self._rss_source_total = 0
         self._rss_source_failed = 0
         self._rss_total_count = 0
         self._rss_matched_count = 0
+        self._today_collect_count = 0
         self._hotlist_total_count = 0
 
         # 初始化存储管理器（使用 AppContext）
@@ -302,6 +300,30 @@ class NewsAnalyzer:
         """获取当前模式的策略配置"""
         return self.MODE_STRATEGIES.get(self.report_mode, self.MODE_STRATEGIES["daily"])
 
+    def _get_today_collect_count(self) -> int:
+        """获取今天的数据采集次数（每运行一次 +1，跨日自动重置）"""
+        today = datetime.now().strftime("%Y-%m-%d")
+        counter_file = os.path.join(self.ctx.config.get("STORAGE", {}).get("DATA_DIR", "output"), ".collect_counter.json")
+        count = 1
+        try:
+            if os.path.exists(counter_file):
+                with open(counter_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if data.get("date") == today:
+                    count = data["count"] + 1
+                else:
+                    count = 1
+        except (IOError, json.JSONDecodeError, KeyError):
+            count = 1
+        # 写回文件
+        try:
+            os.makedirs(os.path.dirname(counter_file), exist_ok=True)
+            with open(counter_file, "w", encoding="utf-8") as f:
+                json.dump({"date": today, "count": count}, f)
+        except IOError:
+            pass
+        return count
+
     def _has_notification_configured(self) -> bool:
         """检查是否配置了任何通知渠道"""
         cfg = self.ctx.config
@@ -342,6 +364,45 @@ class NewsAnalyzer:
                 new_titles and any(len(titles) > 0 for titles in new_titles.values())
             )
             return has_matched_news or has_new_news
+
+    def _get_github_trending_data(self) -> List[Dict]:
+        """从数据库获取今日 GitHub Trending 原始数据（不过 AI 筛选）"""
+        import sqlite3, traceback
+        today = datetime.now().strftime("%Y-%m-%d")
+        data_dir = self.ctx.config.get("STORAGE", {}).get("DATA_DIR", "output")
+        db_path = os.path.join(data_dir, "news", f"{today}.db")
+        try:
+            with open("_github_debug.log", "a", encoding="utf-8") as log:
+                log.write(f"[{today}] _get_github_trending_data called\n")
+                log.write(f"  db_path={db_path}, exists={os.path.exists(db_path)}\n")
+                if not os.path.exists(db_path):
+                    log.write("  DB不存在，返回空\n")
+                    return []
+                conn = sqlite3.connect(db_path, timeout=3)
+                rows = conn.execute(
+                    "SELECT title, url, extra_info, extra_hover, rank "
+                    "FROM news_items WHERE platform_id='github' "
+                    "ORDER BY rank ASC LIMIT 20"
+                ).fetchall()
+                log.write(f"  SQL结果行数: {len(rows)}\n")
+                items = []
+                for r in rows:
+                    items.append({
+                        "title": r[0],
+                        "url": r[1],
+                        "stars": (r[2] or "").replace("\u2730 ", "").strip(),
+                        "description": (r[3] or "").strip(),
+                        "rank": r[4],
+                    })
+                conn.close()
+                log.write(f"  返回 {len(items)} 条\n")
+                if items:
+                    log.write(f"  第一条: {items[0]['title'][:30]}\n")
+                return items
+        except Exception:
+            with open("_github_debug.log", "a", encoding="utf-8") as log:
+                traceback.print_exc(file=log)
+            return []
 
     def _prepare_ai_analysis_data(
         self,
@@ -535,22 +596,14 @@ class NewsAnalyzer:
             else:
                 ai_report_type = report_type
 
-            # 独立 AI 模式（ai_mode != 推送 mode）下，rss_items/standalone_data 仍是推送 mode 的数据，
-            # 与 ai_mode 的热榜 ai_stats 不同源。为避免时间窗错配的数据误导分析，独立模式下不向 AI
-            # 传入 RSS/独立展示区，使其专注于 ai_mode 的热榜分析（同 mode 时正常传入）。
-            ai_rss_stats = rss_items if ai_mode == mode else None
-            ai_standalone = standalone_data if ai_mode == mode else None
-            if ai_mode != mode and (rss_items or standalone_data):
-                print(f"[AI] 独立分析模式（{ai_mode}）：RSS/独立展示区与推送模式（{mode}）不同源，本次分析仅聚焦热榜")
-
             result = analyzer.analyze(
                 stats=ai_stats,
-                rss_stats=ai_rss_stats,
+                rss_stats=rss_items,
                 report_mode=ai_mode,
                 report_type=ai_report_type,
                 platforms=platforms,
                 keywords=keywords,
-                standalone_data=ai_standalone,
+                standalone_data=standalone_data,
             )
 
             # 设置 AI 分析使用的模式
@@ -643,6 +696,8 @@ class NewsAnalyzer:
                     "ranks": ranks,
                     "url": url,
                     "mobileUrl": mobile_url,
+                    "extra_info": title_data.get("extra_info", ""),
+                    "extra_hover": title_data.get("extra_hover", ""),
                 }
         return title_info
 
@@ -813,7 +868,7 @@ class NewsAnalyzer:
         standalone_data: Optional[Dict] = None,
         schedule: ResolvedSchedule = None,
         rss_new_urls: Optional[set] = None,
-    ) -> Tuple[List[Dict], Optional[str], Optional[AIAnalysisResult], Optional[List[Dict]], Optional[Dict], Optional[List[Dict]]]:
+    ) -> Tuple[List[Dict], Optional[str], Optional[AIAnalysisResult], Optional[List[Dict]]]:
         """统一的分析流水线：数据处理 → 统计计算（关键词/AI筛选）→ AI分析 → HTML生成"""
 
         # 根据筛选策略选择数据处理方式
@@ -831,10 +886,9 @@ class NewsAnalyzer:
                 )
                 total_titles = sum(len(titles) for titles in data_source.values())
 
-                # AI 筛选成功：无条件用 AI 结果替换 RSS 主区与新增区（与热榜 stats 一致，
-                # 不因 AI 命中为空而回退到关键词结果）
-                rss_items = ai_rss_stats
-                rss_new_items = ai_rss_new_stats
+                # AI 筛选的 RSS 结果替换关键词匹配的 RSS 结果
+                if ai_rss_stats:
+                    rss_items = ai_rss_stats
             else:
                 # AI 筛选失败，回退到关键词匹配
                 error_msg = ai_filter_result.error if ai_filter_result else "未知错误"
@@ -875,38 +929,32 @@ class NewsAnalyzer:
                 standalone_data=standalone_data
             )
 
-        # 翻译 RSS 和独立展示区内容（如果启用）— 在 HTML 生成前执行，确保网页版也能展示翻译内容
-        # standalone_data 在此翻译一次后贯穿到推送阶段复用，避免重复翻译并保证网页与推送译文一致
-        # 热榜翻译在推送时由 dispatch_all 处理 report_data
+        # 翻译 RSS 内容（如果启用）— 仅在需要推送或分析时执行
+        # 静默采集模式（push=False, analyze=False）跳过翻译以节省 API 和时间
         trans_config = self.ctx.config.get("AI_TRANSLATION", {})
-        translate_report_func = None  # 供 HTML 翻译热榜 report_data（在过滤之后翻译）
-        if trans_config.get("ENABLED", False):
+        if trans_config.get("ENABLED", False) and (schedule is None or schedule.push or schedule.analyze):
             dispatcher = self.ctx.create_notification_dispatcher()
             display_regions = self.ctx.config.get("DISPLAY", {}).get("REGIONS", {})
-            _, rss_items, rss_new_items, standalone_data = \
+            _, rss_items, rss_new_items, _ = \
                 dispatcher.translate_content(
                     report_data={"stats": [], "new_titles": []},
                     rss_items=rss_items,
                     rss_new_items=rss_new_items,
-                    standalone_data=standalone_data,
                     display_regions=display_regions,
                 )
-
-            # 热榜 report_data 翻译回调：HTML 在 prepare_report_data 过滤之后调用，
-            # 仅翻译热榜（skip_rss/skip_standalone 跳过已在上游翻译的 RSS/独立区），网页版热榜展示译文
-            def translate_report_func(rd, _d=dispatcher, _r=display_regions):
-                translated_rd, _, _, _ = _d.translate_content(
-                    report_data=rd, display_regions=_r,
-                    skip_rss=True, skip_standalone=True,
-                )
-                return translated_rd
 
         # 计算 RSS 匹配条数（供 HTML 和推送共用）
         self._rss_matched_count = sum(stat.get("count", 0) for stat in rss_items) if rss_items else 0
 
-        # HTML生成（如果启用）— 使用翻译后的数据
+        # 每次运行都记录采集次数（无论是否生成 HTML）
+        self._today_collect_count = self._get_today_collect_count()
+        # 获取今日 GitHub Trending 原始数据（不过 AI 筛选，独立展示）
+        github_data = self._get_github_trending_data()
+
+        # HTML生成（如果启用）— 仅在需要推送或分析时生成
+        # 静默采集模式（push=False, analyze=False）跳过 HTML 生成节约资源
         html_file = None
-        if self.ctx.config["STORAGE"]["FORMATS"]["HTML"]:
+        if self.ctx.config["STORAGE"]["FORMATS"]["HTML"] and (schedule is None or schedule.push or schedule.analyze):
             display_regions = self.ctx.config.get("DISPLAY", {}).get("REGIONS", {})
             html_standalone = standalone_data if display_regions.get("STANDALONE", False) else None
             html_ai = ai_result if display_regions.get("AI_ANALYSIS", True) else None
@@ -930,11 +978,12 @@ class NewsAnalyzer:
                     "rss_total_count": self._rss_total_count,
                     "rss_source_total": self._rss_source_total,
                     "rss_source_failed": self._rss_source_failed,
+                    "collect_count": self._today_collect_count,
+                    "github_trending": github_data,
                 },
-                translate_report_func=translate_report_func,
             )
 
-        return stats, html_file, ai_result, rss_items, standalone_data, rss_new_items
+        return stats, html_file, ai_result, rss_items
 
     def _send_notification_if_needed(
         self,
@@ -999,8 +1048,7 @@ class NewsAnalyzer:
                 if ai_config.get("ENABLED", False):
                     ai_result = self._run_ai_analysis(
                         stats, rss_items, mode, report_type, id_to_name,
-                        current_results=current_results, schedule=schedule,
-                        standalone_data=standalone_data,
+                        current_results=current_results, schedule=schedule
                     )
 
             # 准备报告数据
@@ -1094,15 +1142,11 @@ class NewsAnalyzer:
     def _crawl_data(self) -> Tuple[Dict, Dict, List]:
         """执行数据爬取"""
         ids = []
-        domain_rules = {}
         for platform in self.ctx.platforms:
             if "name" in platform:
                 ids.append((platform["id"], platform["name"]))
             else:
                 ids.append(platform["id"])
-            expected_domain = platform.get("expected_domain", "")
-            if expected_domain:
-                domain_rules[platform["id"]] = expected_domain
 
         print(
             f"配置的监控平台: {[p.get('name', p['id']) for p in self.ctx.platforms]}"
@@ -1111,7 +1155,7 @@ class NewsAnalyzer:
         Path("output").mkdir(parents=True, exist_ok=True)
 
         results, id_to_name, failed_ids = self.data_fetcher.crawl_websites(
-            ids, self.request_interval, domain_rules=domain_rules
+            ids, self.request_interval
         )
 
         # 转换为 NewsData 格式并保存到存储后端
@@ -1583,7 +1627,6 @@ class NewsAnalyzer:
         stats = []
         ai_result = None
         title_info = None
-        standalone_data = None
 
         # current 模式需要使用完整的历史数据
         if self.report_mode == "current":
@@ -1608,7 +1651,7 @@ class NewsAnalyzer:
                     all_results, historical_id_to_name, historical_title_info, raw_rss_items
                 )
 
-                stats, html_file, ai_result, rss_items, standalone_data, rss_new_items = self._run_analysis_pipeline(
+                stats, html_file, ai_result, rss_items = self._run_analysis_pipeline(
                     all_results,
                     self.report_mode,
                     historical_title_info,
@@ -1652,7 +1695,7 @@ class NewsAnalyzer:
                     all_results, historical_id_to_name, historical_title_info, raw_rss_items
                 )
 
-                stats, html_file, ai_result, rss_items, standalone_data, rss_new_items = self._run_analysis_pipeline(
+                stats, html_file, ai_result, rss_items = self._run_analysis_pipeline(
                     all_results,
                     self.report_mode,
                     historical_title_info,
@@ -1680,7 +1723,7 @@ class NewsAnalyzer:
                 standalone_data = self._prepare_standalone_data(
                     results, id_to_name, title_info, raw_rss_items
                 )
-                stats, html_file, ai_result, rss_items, standalone_data, rss_new_items = self._run_analysis_pipeline(
+                stats, html_file, ai_result, rss_items = self._run_analysis_pipeline(
                     results,
                     self.report_mode,
                     title_info,
@@ -1702,7 +1745,7 @@ class NewsAnalyzer:
             standalone_data = self._prepare_standalone_data(
                 results, id_to_name, title_info, raw_rss_items
             )
-            stats, html_file, ai_result, rss_items, standalone_data, rss_new_items = self._run_analysis_pipeline(
+            stats, html_file, ai_result, rss_items = self._run_analysis_pipeline(
                 results,
                 self.report_mode,
                 title_info,
@@ -1725,8 +1768,9 @@ class NewsAnalyzer:
 
         # 发送通知
         if mode_strategy["should_send_notification"]:
-            # standalone_data 已在分析流水线中翻译，直接复用（不再重新 prepare 原文，
-            # 避免覆盖译文、避免重复翻译，并保证网页报告与推送译文一致）
+            standalone_data = self._prepare_standalone_data(
+                results, id_to_name, title_info, raw_rss_items
+            )
             self._send_notification_if_needed(
                 stats,
                 mode_strategy["report_type"],
@@ -2271,13 +2315,13 @@ def main():
         debug_mode = analyzer.ctx.config.get("DEBUG", False)
         analyzer.run()
     except FileNotFoundError as e:
-        print(f"❌ 配置文件错误: {e}")
+        print(f"[错误] 配置文件错误: {e}")
         print("\n请确保以下文件存在:")
         print("  • config/config.yaml")
         print("  • config/frequency_words.txt")
         print("\n参考项目文档进行正确配置")
     except Exception as e:
-        print(f"❌ 程序运行错误: {e}")
+        print(f"[错误] 程序运行错误: {e}")
         if debug_mode:
             raise
 

@@ -24,6 +24,7 @@ class AIAnalysisResult:
     rss_insights: str = ""               # RSS 深度洞察
     outlook_strategy: str = ""           # 研判与策略建议
     standalone_summaries: Dict[str, str] = field(default_factory=dict)  # 独立展示区概括 {源ID: 概括}
+    daily_summary: str = ""              # 今日一言（30字头条）
 
     # 基础元数据
     raw_response: str = ""               # 原始响应
@@ -120,7 +121,7 @@ class AIAnalyzer:
         api_key = self.client.api_key or ""
         api_base = self.ai_config.get("API_BASE", "")
         masked_key = f"{api_key[:5]}******" if len(api_key) >= 5 else "******"
-        model_display = model.replace("/", "/\u200b") if model else "unknown"
+        model_display = model.replace("/", "/") if model else "unknown"
 
         print(f"[AI] 模型: {model_display}")
         print(f"[AI] Key : {masked_key}")
@@ -618,6 +619,7 @@ class AIAnalyzer:
             result.signals = data.get("signals", "")
             result.rss_insights = data.get("rss_insights", "")
             result.outlook_strategy = data.get("outlook_strategy", "")
+            result.daily_summary = data.get("daily_summary", "")
 
             # 解析独立展示区概括
             summaries = data.get("standalone_summaries", {})
@@ -625,6 +627,14 @@ class AIAnalyzer:
                 result.standalone_summaries = {
                     str(k): str(v) for k, v in summaries.items()
                 }
+
+            # 兜底：如果 AI 没输出 daily_summary，从 core_trends 首句截取
+            if not result.daily_summary and result.core_trends:
+                first_sentence = result.core_trends.split("。")[0].split("\n")[0].strip()
+                if len(first_sentence) > 28:
+                    result.daily_summary = first_sentence[:30] + "…"
+                elif first_sentence:
+                    result.daily_summary = first_sentence
 
             result.success = True
         except (KeyError, TypeError, AttributeError) as e:

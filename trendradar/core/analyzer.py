@@ -234,9 +234,11 @@ def count_word_frequency(
             if title in processed_titles.get(source_id, {}):
                 continue
 
-            # 使用统一的匹配逻辑
+            # 使用统一的匹配逻辑（含描述文本）
+            extra_hover = title_data.get("extra_hover", "")
             matches_frequency_words = matches_word_groups(
-                title, word_groups, filter_words, global_filters
+                title, word_groups, filter_words, global_filters,
+                extra_text=extra_hover,
             )
 
             if not matches_frequency_words:
@@ -254,6 +256,9 @@ def count_word_frequency(
 
             # 找到匹配的词组（防御性转换确保类型安全）
             title_lower = str(title).lower() if not isinstance(title, str) else title.lower()
+            # 描述文本也加入匹配
+            extra_hover = title_data.get("extra_hover", "")
+            combined_lower = f"{title_lower}\n{extra_hover.strip().lower()}" if extra_hover else title_lower
             for group in word_groups:
                 required_words = group["required"]
                 normal_words = group["normal"]
@@ -265,10 +270,10 @@ def count_word_frequency(
                     if source_id not in word_stats[group_key]["titles"]:
                         word_stats[group_key]["titles"][source_id] = []
                 else:
-                    # 原有的匹配逻辑（支持正则语法）
+                    # 原有的匹配逻辑（支持正则语法，含描述文本）
                     if required_words:
                         all_required_present = all(
-                            _word_matches(req_item, title_lower)
+                            _word_matches(req_item, combined_lower)
                             for req_item in required_words
                         )
                         if not all_required_present:
@@ -276,7 +281,7 @@ def count_word_frequency(
 
                     if normal_words:
                         any_normal_present = any(
-                            _word_matches(normal_item, title_lower)
+                            _word_matches(normal_item, combined_lower)
                             for normal_item in normal_words
                         )
                         if not any_normal_present:
@@ -343,6 +348,15 @@ def count_word_frequency(
                     new_titles_for_source = new_titles[source_id]
                     is_new = title in new_titles_for_source
 
+                # 从 title_info 或原始 title_data 中获取扩展字段
+                extra_info = title_data.get("extra_info", "")
+                extra_hover = title_data.get("extra_hover", "")
+                if not extra_info and not extra_hover:
+                    if mode == "current" and title_info and source_id in title_info and title in title_info[source_id]:
+                        info = title_info[source_id][title]
+                        extra_info = info.get("extra_info", "")
+                        extra_hover = info.get("extra_hover", "")
+
                 word_stats[group_key]["titles"][source_id].append(
                     {
                         "title": title,
@@ -357,6 +371,8 @@ def count_word_frequency(
                         "mobileUrl": mobile_url,
                         "is_new": is_new,
                         "rank_timeline": rank_timeline,
+                        "extra_info": extra_info,
+                        "extra_hover": extra_hover,
                     }
                 )
 

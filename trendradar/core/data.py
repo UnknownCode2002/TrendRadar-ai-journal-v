@@ -9,6 +9,7 @@
 Author: TrendRadar Team
 """
 
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 
 
@@ -71,6 +72,8 @@ def read_all_today_titles_from_storage(
                     "url": item.url or "",
                     "mobileUrl": item.mobile_url or "",
                     "rank_timeline": rank_timeline,
+                    "extra_info": item.extra_info or "",
+                    "extra_hover": item.extra_hover or "",
                 }
 
         return all_results, final_id_to_name, title_info
@@ -166,6 +169,28 @@ def detect_latest_new_titles_from_storage(
                 # 如果该记录的首次出现时间早于最新批次，则该标题是历史标题
                 if first_time < latest_time:
                     historical_titles[source_id].add(item.title)
+
+        # 步骤2.5：跨天去重 — 从历史数据中收集标题，近期已出现的不标 🆕
+        # 从昨天开始往前回溯最多 7 天，找到有数据的日期
+        # 避免周末/节假日无数据导致去重失效
+        max_lookback_days = 7
+        for day_offset in range(1, max_lookback_days + 1):
+            history_date = (datetime.now() - timedelta(days=day_offset)).strftime('%Y-%m-%d')
+            history_data = storage_manager.get_today_all_data(history_date)
+            if history_data and history_data.items:
+                history_count = 0
+                for source_id, news_list in history_data.items.items():
+                    if current_platform_ids is not None and source_id not in current_platform_ids:
+                        continue
+                    if source_id not in historical_titles:
+                        historical_titles[source_id] = set()
+                    for item in news_list:
+                        if item.title not in historical_titles[source_id]:
+                            historical_titles[source_id].add(item.title)
+                            history_count += 1
+                if history_count > 0:
+                    print(f"[去重] 从 {history_date} 加载 {history_count} 条历史标题，用于跨天去重")
+                break  # 找到有数据的日期即可，不用再往前查
 
         # 检查是否是当天第一次抓取（没有任何历史标题）
         # 如果所有平台的历史标题集合都为空，说明只有一个抓取批次

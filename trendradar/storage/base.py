@@ -28,6 +28,10 @@ class NewsItem:
     last_time: str = ""                 # 最后出现时间
     count: int = 1                      # 出现次数
     rank_timeline: List[Dict[str, Any]] = field(default_factory=list)  # 完整排名时间线
+
+    # 扩展字段（来自 API extra 信息）
+    extra_info: str = ""                # ⭐星标/points/votes（如 "✰ 36,894"）
+    extra_hover: str = ""               # 项目描述/标语文本（用于关键词匹配）
                                         # 格式: [{"time": "09:30", "rank": 1}, {"time": "10:00", "rank": 2}, ...]
                                         # None 表示脱榜: [{"time": "11:00", "rank": None}]
 
@@ -46,6 +50,8 @@ class NewsItem:
             "last_time": self.last_time,
             "count": self.count,
             "rank_timeline": self.rank_timeline,
+            "extra_info": self.extra_info,
+            "extra_hover": self.extra_hover,
         }
 
     @classmethod
@@ -64,6 +70,8 @@ class NewsItem:
             last_time=data.get("last_time", ""),
             count=data.get("count", 1),
             rank_timeline=data.get("rank_timeline", []),
+            extra_info=data.get("extra_info", ""),
+            extra_hover=data.get("extra_hover", ""),
         )
 
 
@@ -572,6 +580,8 @@ def convert_crawl_results_to_news_data(
                 first_time=crawl_time,
                 last_time=crawl_time,
                 count=1,
+                extra_info=data.get("extra_info", ""),
+                extra_hover=data.get("extra_hover", ""),
             )
             news_list.append(news_item)
 

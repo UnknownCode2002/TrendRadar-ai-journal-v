@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendRadar · 热点报刊</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ── 基础重置与纸张纹理 ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Source Serif 4', 'Noto Sans SC', Georgia, 'Times New Roman', serif;
+            background: #e8dccc;
+            color: #1a1a1a;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        /* 旧纸纹理背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(139, 119, 90, 0.03) 2px,
+                    rgba(139, 119, 90, 0.03) 4px
+                ),
+                radial-gradient(ellipse at 20% 50%, rgba(210, 180, 140, 0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(160, 140, 110, 0.2) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* ── 报纸外框 ── */
+        .newspaper {
+            background: #f7f2ea;
+            border: 1px solid #c9b99a;
+            box-shadow: 0 8px 40px rgba(60, 40, 20, 0.12), 0 2px 8px rgba(60, 40, 20, 0.08);
+            position: relative;
+            padding: 0;
+        }
+
+        .newspaper::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1px solid #d4c5a8;
+            pointer-events: none;
+        }
+
+        .newspaper-inner {
+            padding: 48px 52px 40px;
+            position: relative;
+        }
+
+        /* ── 报头（Masthead）─ */
+        .masthead {
+            text-align: center;
+            border-bottom: 3px double #1a1a1a;
+            padding-bottom: 20px;
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .masthead-ornament {
+            font-size: 14px;
+            color: #8b7a60;
+            letter-spacing: 8px;
+            margin-bottom: 6px;
+            font-family: Georgia, serif;
+        }
+
+        .masthead-title {
+            font-family: 'Playfair Display', 'Noto Sans SC', serif;
+            font-size: clamp(42px, 8vw, 72px);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+            color: #1a1a1a;
+            text-transform: uppercase;
+        }
+
+        .masthead-title .accent {
+            color: #b22222;
+        }
+
+        .masthead-sub {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(14px, 2vw, 18px);
+            color: #6b5d4a;
+            letter-spacing: 0.15em;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .masthead-date {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6b5d4a;
+            border-top: 1px solid #d4c5a8;
+            margin-top: 16px;
+            font-family: 'Source Serif 4', serif;
+        }
+
+        .masthead-date .dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: #b22222;
+            border-radius: 50%;
+            margin: 0 8px;
+            vertical-align: middle;
+        }
+
+        /* ── 导读 / 头条区域 ── */
+        .headline-section {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 32px;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid #d4c5a8;
+        }
+
+        @media (max-width: 720px) {
+            .headline-section { grid-template-columns: 1fr; }
+        }
+
+        .headline-main {
+            position: relative;
+        }
+
+        .headline-main .category-tag {
+            display: inline-block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #f7f2ea;
+            background: #b22222;
+            padding: 4px 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-family: 'Source Serif 4', serif;
+        }
+
+        .headline-title {
+            font-family: 'Playfair Display', 'Noto Sans SC', serif;
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .headline-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .headline-title a:hover {
+            color: #b22222;
+        }
+
+        .headline-meta {
+            font-size: 12px;
+            color: #8b7a60;
+            margin-bottom: 12px;
+            letter-spacing: 0.03em;
+        }
+
+        .headline-summary {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #3a3530;
+        }
+
+        .headline-sidebar {
+            border-left: 1px solid #d4c5a8;
+            padding-left: 28px;
+        }
+
+        @media (max-width: 720px) {
+            .headline-sidebar {
+                border-left: none;
+                padding-left: 0;
+            }
+        }
+
+        .sidebar-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #8b7a60;
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #d4c5a8;
+        }
+
+        .sidebar-list {
+            list-style: none;
+        }
+
+        .sidebar-list li {
+            padding: 8px 0;
+            border-bottom: 1px dotted #e0d5c2;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .sidebar-list li:last-child { border-bottom: none; }
+
+        .sidebar-list li::before {
+            content: '▸ ';
+            color: #b22222;
+            font-size: 12px;
+        }
+
+        .sidebar-list a {
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+        .sidebar-list a:hover {
+            color: #b22222;
+        }
+
+        .sidebar-list .source {
+            display: block;
+            font-size: 10px;
+            color: #8b7a60;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 2px;
+        }
+
+        /* ── 分栏内容区 ── */
+        .columns-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid #d4c5a8;
+        }
+
+        @media (max-width: 860px) {
+            .columns-section { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 540px) {
+            .columns-section { grid-template-columns: 1fr; }
+            .newspaper-inner { padding: 28px 20px; }
+            .page-wrap { padding: 16px 12px; }
+        }
+
+        .column {
+            border-right: 1px solid #d4c5a8;
+            padding-right: 28px;
+        }
+        .column:last-child {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        @media (max-width: 860px) {
+            .column:nth-child(2) { border-right: none; padding-right: 0; }
+            .column:nth-child(3) { padding-left: 0; }
+        }
+        @media (max-width: 540px) {
+            .column { border-right: none; padding-right: 0; }
+        }
+
+        .column-header {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #1a1a1a;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .news-card {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dotted #ddd2be;
+        }
+        .news-card:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .news-card .card-category {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #b22222;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .news-card .card-title {
+            font-family: 'Playfair Display', 'Noto Sans SC', serif;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .news-card .card-title a {
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+        .news-card .card-title a:hover {
+            color: #b22222;
+        }
+
+        .news-card .card-summary {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #5a5248;
+        }
+
+        .news-card .card-source {
+            font-size: 10px;
+            color: #8b7a60;
+            letter-spacing: 0.04em;
+            margin-top: 4px;
+        }
+
+        /* ── 特殊区块：社论 / 分析 ── */
+        .editorial-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid #d4c5a8;
+        }
+
+        @media (max-width: 720px) {
+            .editorial-section { grid-template-columns: 1fr; }
+        }
+
+        .editorial-block {
+            background: rgba(210, 190, 160, 0.18);
+            padding: 28px 24px;
+            border: 1px solid #d4c5a8;
+        }
+
+        .editorial-block .label {
+            font-family: 'Playfair Display', serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #b22222;
+            margin-bottom: 8px;
+        }
+
+        .editorial-block h3 {
+            font-family: 'Playfair Display', 'Noto Sans SC', serif;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+        }
+
+        .editorial-block p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #3a3530;
+        }
+
+        .editorial-block .byline {
+            font-size: 11px;
+            font-style: italic;
+            color: #8b7a60;
+            margin-top: 12px;
+        }
+
+        /* ── 数据板块 ── */
+        .data-section {
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 2px double #1a1a1a;
+        }
+
+        .data-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .data-header h2 {
+            font-family: 'Playfair Display', 'Noto Sans SC', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .data-header .sub {
+            font-size: 12px;
+            color: #8b7a60;
+            font-style: italic;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px 12px;
+            border: 1px solid #d4c5a8;
+            background: rgba(247, 242, 234, 0.6);
+        }
+
+        .stat-card .number {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+            color: #b22222;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b5d4a;
+            margin-top: 6px;
+        }
+
+        /* ── 脚注 ── */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #d4c5a8;
+        }
+
+        .footer-ornament {
+            font-size: 20px;
+            color: #c9b99a;
+            letter-spacing: 10px;
+            margin-bottom: 12px;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #8b7a60;
+            letter-spacing: 0.04em;
+        }
+
+        .footer-text a {
+            color: #6b5d4a;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .footer-text a:hover {
+            color: #b22222;
+        }
+
+        .footer-divider {
+            width: 60px;
+            height: 1px;
+            background: #c9b99a;
+            margin: 12px auto;
+        }
+
+        /* ── 特效：印刷油墨晕染 ── */
+        .ink-bleed {
+            position: relative;
+        }
+        .ink-bleed::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(0,0,0,0.015) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(0,0,0,0.01) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* ── 装饰性首字母大写下沉 ── */
+        .dropcap::first-letter {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.4em;
+            font-weight: 700;
+            float: left;
+            line-height: 0.85;
+            margin-right: 8px;
+            margin-top: 4px;
+            color: #1a1a1a;
+        }
+
+        /* ── 分割装饰线 ── */
+        .divider-dash {
+            text-align: center;
+            font-size: 16px;
+            color: #c9b99a;
+            letter-spacing: 6px;
+            margin: 20px 0;
+        }
+        .divider-dash::before,
+        .divider-dash::after {
+            content: '— — —';
+        }
+
+        /* ── 平台徽标列表 ── */
+        .platform-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .platform-tag {
+            font-size: 10px;
+            padding: 3px 8px;
+            border: 1px solid #d4c5a8;
+            color: #6b5d4a;
+            letter-spacing: 0.04em;
+            background: rgba(247, 242, 234, 0.5);
+        }
+
+        /* ── 响应式微调 ── */
+        @media (max-width: 480px) {
+            .masthead-title { font-size: 32px; }
+            .headline-section { gap: 20px; }
+            .columns-section { gap: 20px; }
+            .editorial-section { gap: 20px; }
+            .newspaper-inner { padding: 20px 16px; }
+        }
+
+        /* ── 打印优化 ── */
+        @media print {
+            body { background: white; }
+            .newspaper { box-shadow: none; border-color: #aaa; }
+            .page-wrap { padding: 0; }
+            .newspaper-inner { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+    <div class="newspaper">
+        <div class="newspaper-inner">
+
+            <!-- ═══ 报头 Masthead ═══ -->
+            <header class="masthead">
+                <div class="masthead-ornament">✦ ✦ ✦</div>
+                <h1 class="masthead-title">
+                    Trend<span class="accent">Radar</span>
+                </h1>
+                <p class="masthead-sub">— 每天 AI 热点 · 洞见先机 —</p>
+                <div class="masthead-date">
+                    <span>第 42 期</span>
+                    <span><span class="dot"></span> 2026 年 5 月 27 日 · 星期三 <span class="dot"></span></span>
+                    <span>北京·上海·深圳</span>
+                </div>
+            </header>
+
+            <!-- ═══ 头条 Headline ═══ -->
+            <section class="headline-section">
+                <div class="headline-main">
+                    <span class="category-tag">📰 今日头条</span>
+                    <h2 class="headline-title">
+                        <a href="#">AI 模型竞赛白热化：DeepSeek V4 与 GPT-5.6 同日发布新特性</a>
+                    </h2>
+                    <div class="headline-meta">
+                        <span>2026-05-27</span>
+                        <span style="margin:0 8px;">|</span>
+                        <span>来源：综合多家媒体</span>
+                    </div>
+                    <p class="headline-summary dropcap">
+                        全球 AI 大模型赛道竞争持续升温。DeepSeek 于今日凌晨发布 V4 版本重要更新，在推理能力与多模态理解上实现突破性进展；与此同时，OpenAI 亦被曝即将推出 GPT-5.6 中间版本，强化 Agent 自主决策与长上下文处理能力。业界分析认为，两大阵营的技术路线正在趋同——从单纯追求参数规模转向工程效率与实用性的精耕细作。
+                    </p>
+                </div>
+                <aside class="headline-sidebar">
+                    <h3 class="sidebar-title">⚡ 速览</h3>
+                    <ul class="sidebar-list">
+                        <li>
+                            <a href="#">英伟达 B300 GPU 量产在即，推理性能提升 3 倍</a>
+                            <span class="source">华尔街见闻</span>
+                        </li>
+                        <li>
+                            <a href="#">宇树科技完成 10 亿美元融资，人形机器人商业化提速</a>
+                            <span class="source">36氪</span>
+                        </li>
+                        <li>
+                            <a href="#">MCP 协议 2.0 发布，AI 工具调用标准走向成熟</a>
+                            <span class="source">GitHub</span>
+                        </li>
+                        <li>
+                            <a href="#">Claude 新增代码沙箱功能，可直接运行 Python 代码</a>
+                            <span class="source">少数派</span>
+                        </li>
+                        <li>
+                            <a href="#">开源大模型 Qwen3 登顶 HuggingFace 排行榜</a>
+                            <span class="source">知乎</span>
+                        </li>
+                    </ul>
+                </aside>
+            </section>
+
+            <!-- ═══ 三栏内容区 ═══ -->
+            <section class="columns-section">
+                <!-- 栏 1 -->
+                <div class="column">
+                    <h3 class="column-header">🤖 AI 前沿</h3>
+                    <div class="news-card">
+                        <div class="card-category">DeepSeek</div>
+                        <div class="card-title"><a href="#">DeepSeek V4 推理能力超 GPT-5，成本仅为 1/10</a></div>
+                        <p class="card-summary">新版本在 MATH、GPQA 等基准测试中全面超越 GPT-5，推理成本降至每百万 token 仅 0.2 美元，引发行业震动。</p>
+                        <div class="card-source">来源：机器之心 · 1 小时前</div>
+                    </div>
+                    <div class="news-card">
+                        <div class="card-category">OpenAI</div>
+                        <div class="card-title"><a href="#">GPT-5.6 泄露：Agent 模式与 1M 上下文窗口</a></div>
+                        <p class="card-summary">内部测试截图流出，新版本支持自主规划执行复杂任务，上下文窗口扩展至 100 万 token。</p>
+                        <div class="card-source">来源：品玩 · 3 小时前</div>
+                    </div>
+                    <div class="news-card">
+                        <div class="card-category">业界</div>
+                        <div class="card-title"><a href="#">英伟达 Blackwell Ultra 发布，AI 算力再翻倍</a></div>
+                        <p class="card-summary">黄仁勋在 GTC 大会上宣布新一代 GPU 架构，单卡 FP8 算力达 20 PetaFLOPS。</p>
+                        <div class="card-source">来源：钛媒体 · 5 小时前</div>
+                    </div>
+                </div>
+
+                <!-- 栏 2 -->
+                <div class="column">
+                    <h3 class="column-header">🌐 技术生态</h3>
+                    <div class="news-card">
+                        <div class="card-category">开源</div>
+                        <div class="card-title"><a href="#">Llama 4 正式开源：405B 参数，碾压同级闭源模型</a></div>
+                        <p class="card-summary">Meta 发布 Llama 4 开源大模型，在推理、编程、多语言等维度全面超越 GPT-4o。</p>
+                        <div class="card-source">来源：GitHub Trending · 2 小时前</div>
+                    </div>
+                    <div class="news-card">
+                        <div class="card-category">机器人</div>
+                        <div class="card-title"><a href="#">Figure 02 进厂打工：已实现 100% 自主装配</a></div>
+                        <p class="card-summary">Figure AI 宣布其人形机器人在宝马工厂实现完全自主的零部件装配作业，节拍提升 40%。</p>
+                        <div class="card-source">来源：虎嗅 · 4 小时前</div>
+                    </div>
+                    <div class="news-card">
+                        <div class="card-category">工具</div>
+                        <div class="card-title"><a href="#">Cursor 推出 AI 团队协作模式，多人实时编程</a></div>
+                        <p class="card-summary">AI 编程 IDE Cursor 发布 Team Mode，支持多人协同编辑，AI 辅助代码审查。</p>
+                        <div class="card-source">来源：Product Hunt · 6 小时前</div>
+                    </div>
+                </div>
+
+                <!-- 栏 3 -->
+                <div class="column">
+                    <h3 class="column-header">💹 产业观察</h3>
+                    <div class="news-card">
+                        <div class="card-category">资本</div>
+                        <div class="card-title"><a href="#">AI 赛道上半年融资额破千亿美元</a></div>
+                        <p class="card-summary">据 PitchBook 数据，2026 上半年全球 AI 领域融资总额达 1050 亿美元，超过去年全年。</p>
+                        <div class="card-source">来源：36氪 · 1 小时前</div>
+                    </div>
+                    <div class="news-card">
+                        <div class="card-category">政策</div>
+                        <div class="card-title"><a href="#">欧盟 AI 法案正式生效：高风险系统须通过认证</a></div>
+                        <p class="card-summary">全球首部全面 AI 监管法规今起实施，对医疗、金融等高风险场景提出严格合规要求。</p>
+                        <div class="card-source">来源：澎湃新闻 · 3 小时前</div>
+                    </div>
+                    <div class="news-card">
+                        <div class="card-category">公司</div>
+                        <div class="card-title"><a href="#">幻方量化宣布 10% 利润投入 AI 基础研究</a></div>
+                        <p class="card-summary">量化巨头幻方量化宣布将每年 10% 净利润投入 AI 基础研究，重点发力多模态与推理能力。</p>
+                        <div class="card-source">来源：财联社 · 7 小时前</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ 数据看板 ═══ -->
+            <section class="data-section">
+                <div class="data-header">
+                    <h2>📊 热点数据看板</h2>
+                    <p class="sub">数据来源：全平台实时监测 · 自动聚合分析</p>
+                </div>
+                <div class="data-grid">
+                    <div class="stat-card">
+                        <div class="number">23</div>
+                        <div class="label">监测平台</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">1,847</div>
+                        <div class="label">今日热榜条数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">86</div>
+                        <div class="label">匹配关键词</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">12</div>
+                        <div class="label">AI 分析报告</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">42</div>
+                        <div class="label">RSS 订阅源</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">7</div>
+                        <div class="label">推送渠道</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ 社论 / 分析区 ═══ -->
+            <section class="editorial-section">
+                <div class="editorial-block">
+                    <div class="label">✎ 本刊社论</div>
+                    <h3>当 AI 不再"智能"：从炒作到落地的冷静期</h3>
+                    <p>2026 年的 AI 行业正在经历一场静默转型。喧嚣的发布会背后，企业开始关注 ROI、落地场景与工程可行性。大模型不再是万能灵药，小而精的垂直模型、高效的推理架构正在成为新宠。这或许正是行业走向成熟的标志——从"能不能做"转向"值不值得做"。</p>
+                    <p class="byline">—— 本报编辑部</p>
+                </div>
+                <div class="editorial-block">
+                    <div class="label">📡 监测全景</div>
+                    <h3>全平台热点实时追踪</h3>
+                    <p>TrendRadar 正持续监测来自微博、知乎、今日头条、B站、GitHub、Hacker News 等 <strong>23 个平台</strong>的热点资讯数据。通过 <strong>AI 智能筛选</strong>与关键词匹配算法，自动过滤噪音，精准定位与你最相关的内容。</p>
+                    <div class="platform-tags">
+                        <span class="platform-tag">微博</span>
+                        <span class="platform-tag">知乎</span>
+                        <span class="platform-tag">今日头条</span>
+                        <span class="platform-tag">B站</span>
+                        <span class="platform-tag">GitHub</span>
+                        <span class="platform-tag">Hacker News</span>
+                        <span class="platform-tag">36氪</span>
+                        <span class="platform-tag">澎湃</span>
+                        <span class="platform-tag">掘金</span>
+                        <span class="platform-tag">V2EX</span>
+                        <span class="platform-tag">IT之家</span>
+                        <span class="platform-tag">Product Hunt</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ 脚注 ═══ -->
+            <footer class="footer">
+                <div class="footer-ornament">✦ ✦ ✦</div>
+                <p class="footer-text">
+                    <strong>TrendRadar</strong> · 开源 · 免费 · 自托管
+                    <span class="footer-divider"></span>
+                    <a href="#">GitHub</a> &nbsp;·&nbsp; <a href="#">文档</a> &nbsp;·&nbsp; <a href="#">配置编辑器</a>
+                    <span class="footer-divider"></span>
+                    数据自动采集与分析 · 每日推送 · 本刊内容仅供参考
+                </p>
+            </footer>
+
+        </div><!-- /newspaper-inner -->
+    </div><!-- /newspaper -->
+</div><!-- /page-wrap -->
+
+</body>
+</html>

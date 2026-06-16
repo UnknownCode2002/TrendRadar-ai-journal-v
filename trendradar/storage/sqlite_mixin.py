@@ -95,6 +95,8 @@ class SQLiteStorageMixin:
             if ai_filter_schema.exists():
                 with open(ai_filter_schema, "r", encoding="utf-8") as f:
                     conn.executescript(f.read())
+            # 迁移新闻表：添加 extra_info/extra_hover 列（向后兼容）
+            self._migrate_news_schema(conn)
 
         if db_type == "rss":
             self._migrate_rss_schema(conn)
@@ -111,6 +113,15 @@ class SQLiteStorageMixin:
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_rss_guid_feed
                 ON rss_items(guid, feed_id) WHERE guid != ''
             """)
+
+    def _migrate_news_schema(self, conn: sqlite3.Connection) -> None:
+        """迁移 news_items 表结构（为已有数据库添加 extra_info/extra_hover 列）"""
+        cursor = conn.execute("PRAGMA table_info(news_items)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if "extra_info" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN extra_info TEXT DEFAULT ''")
+        if "extra_hover" not in columns:
+            conn.execute("ALTER TABLE news_items ADD COLUMN extra_hover TEXT DEFAULT ''")
 
     # ========================================
     # 新闻数据存储
@@ -199,11 +210,14 @@ class SQLiteStorageMixin:
                                         rank = ?,
                                         mobile_url = ?,
                                         last_crawl_time = ?,
+                                        extra_info = ?,
+                                        extra_hover = ?,
                                         crawl_count = crawl_count + 1,
                                         updated_at = ?
                                     WHERE id = ?
                                 """, (update_title, item.rank, item.mobile_url,
-                                      data.crawl_time, now_str, existing_id))
+                                      data.crawl_time, item.extra_info, item.extra_hover,
+                                      now_str, existing_id))
                                 updated_count += 1
                             else:
                                 # 不存在，插入新记录（存储标准化后的 URL）
@@ -211,10 +225,12 @@ class SQLiteStorageMixin:
                                     INSERT INTO news_items
                                     (title, platform_id, rank, url, mobile_url,
                                      first_crawl_time, last_crawl_time, crawl_count,
+                                     extra_info, extra_hover,
                                      created_at, updated_at)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
                                 """, (item.title, source_id, item.rank, normalized_url,
                                       item.mobile_url, data.crawl_time, data.crawl_time,
+                                      item.extra_info, item.extra_hover,
                                       now_str, now_str))
                                 new_id = cursor.lastrowid
                                 # 记录初始排名
@@ -230,10 +246,12 @@ class SQLiteStorageMixin:
                                 INSERT INTO news_items
                                 (title, platform_id, rank, url, mobile_url,
                                  first_crawl_time, last_crawl_time, crawl_count,
+                                 extra_info, extra_hover,
                                  created_at, updated_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
                             """, (item.title, source_id, item.rank, "",
                                   item.mobile_url, data.crawl_time, data.crawl_time,
+                                  item.extra_info, item.extra_hover,
                                   now_str, now_str))
                             new_id = cursor.lastrowid
                             # 记录初始排名
@@ -358,7 +376,8 @@ class SQLiteStorageMixin:
             cursor.execute("""
                 SELECT n.id, n.title, n.platform_id, p.name as platform_name,
                        n.rank, n.url, n.mobile_url,
-                       n.first_crawl_time, n.last_crawl_time, n.crawl_count
+                       n.first_crawl_time, n.last_crawl_time, n.crawl_count,
+                       n.extra_info, n.extra_hover
                 FROM news_items n
                 LEFT JOIN platforms p ON n.platform_id = p.id
                 ORDER BY n.platform_id, n.last_crawl_time
@@ -444,6 +463,8 @@ class SQLiteStorageMixin:
                     last_time=row[8],   # last_crawl_time
                     count=row[9],       # crawl_count
                     rank_timeline=rank_timeline,
+                    extra_info=row[10] if len(row) > 10 and row[10] else "",
+                    extra_hover=row[11] if len(row) > 11 and row[11] else "",
                 ))
 
             final_items = items
@@ -1075,11 +1096,11 @@ class SQLiteStorageMixin:
                         if item.url:
                             historical_urls[feed_id].add(item.url)
 
-            # 检查是否有早于当前批次的历史数据
+            # 检查是否有历史数据
             has_historical_data = any(len(urls) > 0 for urls in historical_urls.values())
             if not has_historical_data:
-                # 当天第一次抓取，所有条目都是新增
-                return current_data.items.copy()
+                # 第一次抓取，没有"新增"概念
+                return {}
 
             # 检测新增
             new_items: Dict[str, List[RSSItem]] = {}

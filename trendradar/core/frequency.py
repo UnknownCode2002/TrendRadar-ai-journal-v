@@ -247,7 +247,8 @@ def matches_word_groups(
     title: str,
     word_groups: List[Dict],
     filter_words: List,
-    global_filters: Optional[List[str]] = None
+    global_filters: Optional[List[str]] = None,
+    extra_text: Optional[str] = None,
 ) -> bool:
     """
     检查标题是否匹配词组规则
@@ -257,6 +258,7 @@ def matches_word_groups(
         word_groups: 词组列表
         filter_words: 过滤词列表（可以是字符串列表或字典列表）
         global_filters: 全局过滤词列表
+        extra_text: 额外匹配文本（如项目描述），也会参与关键词匹配
 
     Returns:
         是否匹配
@@ -269,9 +271,14 @@ def matches_word_groups(
 
     title_lower = title.lower()
 
+    # 额外描述文本也加入匹配范围
+    combined_lower = title_lower
+    if extra_text and isinstance(extra_text, str) and extra_text.strip():
+        combined_lower = f"{title_lower}\n{extra_text.strip().lower()}"
+
     # 全局过滤检查（优先级最高）
     if global_filters:
-        if any(global_word.lower() in title_lower for global_word in global_filters):
+        if any(global_word.lower() in combined_lower for global_word in global_filters):
             return False
 
     # 如果没有配置词组，则匹配所有标题（支持显示全部新闻）
@@ -280,7 +287,7 @@ def matches_word_groups(
 
     # 过滤词检查（兼容新旧格式）
     for filter_item in filter_words:
-        if _word_matches(filter_item, title_lower):
+        if _word_matches(filter_item, combined_lower):
             return False
 
     # 词组匹配检查
@@ -288,18 +295,18 @@ def matches_word_groups(
         required_words = group["required"]
         normal_words = group["normal"]
 
-        # 必须词检查
+        # 必须词检查（对标题+描述文本同时匹配）
         if required_words:
             all_required_present = all(
-                _word_matches(req_item, title_lower) for req_item in required_words
+                _word_matches(req_item, combined_lower) for req_item in required_words
             )
             if not all_required_present:
                 continue
 
-        # 普通词检查
+        # 普通词检查（对标题+描述文本同时匹配）
         if normal_words:
             any_normal_present = any(
-                _word_matches(normal_item, title_lower) for normal_item in normal_words
+                _word_matches(normal_item, combined_lower) for normal_item in normal_words
             )
             if not any_normal_present:
                 continue
