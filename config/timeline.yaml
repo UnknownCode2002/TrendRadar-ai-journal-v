@@ -433,12 +433,22 @@ custom:
       push: true                   # 推送汇总
       report_mode: "daily"         # 当日全部新闻汇总
 
+    test_push:
+      name: "测试推送"
+      start: "14:00"
+      end: "17:00"
+      analyze: true
+      ai_mode: "current"
+      push: true
+      report_mode: "current"
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 日计划
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   day_plans:
     all_day:
       periods: ["morning_briefing", "closing_summary"]
+      # periods: ["morning_briefing", "closing_summary", "test_push"]  # 临时测试用
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 周映射（周一到周日都用同一个计划）
