@@ -145,6 +145,30 @@ docker compose pull
 docker compose up -d
 ```
 
+### 7️⃣ 计划任务（Windows 本地定时运行）
+
+以**管理员身份**运行一键安装脚本，创建三个定时任务：
+
+```bash
+# 管理员身份运行
+setup-tasks.bat
+```
+
+创建后的任务计划：
+
+| 任务 | 时间 | 说明 |
+|------|------|------|
+| **TrendRadar** | 08:35（每天） | 到岗速览推送 + AI 分析 |
+| **TrendRadar 采集** | 11:00 / 13:00 / 15:00 / 17:00 | 每 2 小时采集一次数据 |
+| **TrendRadar 收工** | 17:25（每天） | 收工汇总推送 + AI 分析 |
+
+如需手动删除：
+```bash
+schtasks /delete /tn "TrendRadar" /f
+schtasks /delete /tn "TrendRadar 采集" /f
+schtasks /delete /tn "TrendRadar 收工" /f
+```
+
 <br>
 
 ---
